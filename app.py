@@ -13,10 +13,10 @@ app = Flask(__name__)
 PRODUCTS = [
     {
         "id": 1,
-        "name": "1.8 GB RAM",
+        "name": "8 GB RAM",
         "price": 3000,
         "category": "RAM",
-        "description": "1.8 GB laptop RAM",
+        "description": "8 GB laptop RAM",
         "image": "ram.jfif"
     },
     {
@@ -33,7 +33,7 @@ PRODUCTS = [
         "price": 700,
         "category": "Battery",
         "description": "HS04 laptop battery",
-        "image": "hs04_battery.jfif"
+        "image": "p.jfif"
     },
     {
         "id": 4,
