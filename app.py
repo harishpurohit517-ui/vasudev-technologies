@@ -1,14 +1,12 @@
 from flask import Flask, request, jsonify, render_template_string, send_from_directory
 import os
-import smtplib
 import json
-import ssl
-from email.message import EmailMessage
+import resend
 
 app = Flask(__name__)
 
 # =========================================================
-# VASUDEV TECHNOLOGIES - PRODUCTS
+# PRODUCTS
 # =========================================================
 
 products = [
@@ -71,20 +69,27 @@ products = [
 ]
 
 # =========================================================
-# GMAIL SETTINGS
+# RESEND SETTINGS
 # =========================================================
 
-SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 
 BUSINESS_EMAIL = "harishpurohit517@gmail.com"
 
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+# Resend provides onboarding@resend.dev for testing.
+# For production, replace this with an address on your
+# verified domain.
+SENDER_EMAIL = os.environ.get(
+    "SENDER_EMAIL",
+    "onboarding@resend.dev"
+)
+
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
 
 
 # =========================================================
-# PRODUCT IMAGE
+# PRODUCT IMAGES
 # =========================================================
 
 @app.route("/product-image/<path:filename>")
@@ -96,7 +101,7 @@ def product_image(filename):
 
 
 # =========================================================
-# HOME PAGE
+# HOME
 # =========================================================
 
 @app.route("/")
@@ -111,7 +116,11 @@ def home():
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>VASUDEV TECHNOLOGIES</title>
 
@@ -157,10 +166,6 @@ header {
     font-weight: bold;
 }
 
-.cart-button:hover {
-    background: #1d4ed8;
-}
-
 .hero {
     background: linear-gradient(135deg, #0f172a, #1e3a8a);
     color: white;
@@ -198,7 +203,8 @@ header {
     margin: auto;
     padding: 20px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns:
+        repeat(auto-fit, minmax(240px, 1fr));
     gap: 25px;
 }
 
@@ -212,14 +218,13 @@ header {
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 14px 35px rgba(0,0,0,0.13);
 }
 
 .product-image {
     width: 100%;
     height: 210px;
     object-fit: contain;
-    background: #ffffff;
+    background: white;
     padding: 15px;
 }
 
@@ -316,6 +321,7 @@ header {
     align-items: center;
     gap: 10px;
     margin-top: 10px;
+    flex-wrap: wrap;
 }
 
 .quantity button {
@@ -327,9 +333,11 @@ header {
     cursor: pointer;
 }
 
-.remove {
-    background: #fee2e2 !important;
+.quantity .remove {
+    width: auto;
+    padding: 0 10px;
     color: #dc2626;
+    background: #fee2e2;
 }
 
 .total {
@@ -348,10 +356,6 @@ header {
     font-size: 17px;
     font-weight: bold;
     cursor: pointer;
-}
-
-.enquire-button:hover {
-    background: #15803d;
 }
 
 /* FORM */
@@ -479,10 +483,10 @@ Laptop Parts • Computer Accessories • Quality Products
 <div class="search-area">
 
 <input
-class="search-box"
-id="search"
-placeholder="Search products..."
-oninput="searchProducts()"
+    class="search-box"
+    id="search"
+    placeholder="Search products..."
+    oninput="searchProducts()"
 >
 
 </div>
@@ -495,9 +499,13 @@ oninput="searchProducts()"
 
 <h2>VASUDEV TECHNOLOGIES</h2>
 
-<p>Quality laptop parts and computer accessories.</p>
+<p>
+Quality laptop parts and computer accessories.
+</p>
 
-<p>© 2026 VASUDEV TECHNOLOGIES</p>
+<p>
+© 2026 VASUDEV TECHNOLOGIES
+</p>
 
 </footer>
 
@@ -524,7 +532,10 @@ Close
 Total: ₹<span id="cartTotal">0</span>
 </div>
 
-<button class="enquire-button" onclick="openEnquiry()">
+<button
+    class="enquire-button"
+    onclick="openEnquiry()"
+>
 Enquire About These Products
 </button>
 
@@ -533,7 +544,7 @@ Enquire About These Products
 </div>
 
 
-<!-- ENQUIRY FORM -->
+<!-- ENQUIRY -->
 
 <div class="modal" id="enquiryModal">
 
@@ -548,29 +559,29 @@ Enter your details and we will contact you.
 <label>Name</label>
 
 <input
-id="customerName"
-type="text"
-placeholder="Your name"
+    id="customerName"
+    type="text"
+    placeholder="Your name"
 >
 
 <label>Phone Number</label>
 
 <input
-id="customerPhone"
-type="tel"
-placeholder="Your phone number"
+    id="customerPhone"
+    type="tel"
+    placeholder="Your phone number"
 >
 
 <button
-class="submit-button"
-onclick="submitEnquiry()"
+    class="submit-button"
+    onclick="submitEnquiry()"
 >
 Send Enquiry
 </button>
 
 <button
-class="cancel-button"
-onclick="closeEnquiry()"
+    class="cancel-button"
+    onclick="closeEnquiry()"
 >
 Cancel
 </button>
@@ -591,7 +602,8 @@ let cart = [];
 
 function displayProducts(list = products) {
 
-    const container = document.getElementById("products");
+    const container =
+        document.getElementById("products");
 
     container.innerHTML = "";
 
@@ -613,7 +625,6 @@ function displayProducts(list = products) {
                 class="product-image"
                 src="/product-image/${product.image}"
                 alt="${product.name}"
-                onerror="this.style.display='none'"
             >
 
             <div class="card-content">
@@ -654,7 +665,8 @@ function displayProducts(list = products) {
 
 function addToCart(id) {
 
-    const existing = cart.find(item => item.id === id);
+    const existing =
+        cart.find(item => item.id === id);
 
     if (existing) {
 
@@ -662,7 +674,8 @@ function addToCart(id) {
 
     } else {
 
-        const product = products.find(p => p.id === id);
+        const product =
+            products.find(p => p.id === id);
 
         cart.push({
             ...product,
@@ -678,7 +691,8 @@ function addToCart(id) {
 
 function increaseQuantity(id) {
 
-    const item = cart.find(p => p.id === id);
+    const item =
+        cart.find(p => p.id === id);
 
     if (item) {
         item.quantity++;
@@ -691,7 +705,8 @@ function increaseQuantity(id) {
 
 function decreaseQuantity(id) {
 
-    const item = cart.find(p => p.id === id);
+    const item =
+        cart.find(p => p.id === id);
 
     if (!item) return;
 
@@ -699,7 +714,8 @@ function decreaseQuantity(id) {
 
     if (item.quantity <= 0) {
 
-        cart = cart.filter(p => p.id !== id);
+        cart =
+            cart.filter(p => p.id !== id);
 
     }
 
@@ -710,7 +726,8 @@ function decreaseQuantity(id) {
 
 function removeFromCart(id) {
 
-    cart = cart.filter(p => p.id !== id);
+    cart =
+        cart.filter(p => p.id !== id);
 
     updateCart();
 
@@ -719,14 +736,17 @@ function removeFromCart(id) {
 
 function updateCart() {
 
-    const count = cart.reduce(
-        (sum, item) => sum + item.quantity,
-        0
-    );
+    const count =
+        cart.reduce(
+            (sum, item) => sum + item.quantity,
+            0
+        );
 
-    document.getElementById("cartCount").innerText = count;
+    document.getElementById("cartCount").innerText =
+        count;
 
-    const container = document.getElementById("cartItems");
+    const container =
+        document.getElementById("cartItems");
 
     container.innerHTML = "";
 
@@ -741,7 +761,8 @@ function updateCart() {
 
     cart.forEach(item => {
 
-        const subtotal = item.price * item.quantity;
+        const subtotal =
+            item.price * item.quantity;
 
         total += subtotal;
 
@@ -765,7 +786,9 @@ function updateCart() {
 
             <div class="quantity">
 
-                <button onclick="decreaseQuantity(${item.id})">
+                <button
+                    onclick="decreaseQuantity(${item.id})"
+                >
                     −
                 </button>
 
@@ -773,7 +796,9 @@ function updateCart() {
                     ${item.quantity}
                 </span>
 
-                <button onclick="increaseQuantity(${item.id})">
+                <button
+                    onclick="increaseQuantity(${item.id})"
+                >
                     +
                 </button>
 
@@ -818,7 +843,9 @@ function openEnquiry() {
 
     if (cart.length === 0) {
 
-        alert("Please add at least one product to the cart.");
+        alert(
+            "Please add at least one product to the cart."
+        );
 
         return;
     }
@@ -840,10 +867,14 @@ function closeEnquiry() {
 function submitEnquiry() {
 
     const name =
-        document.getElementById("customerName").value.trim();
+        document.getElementById("customerName")
+        .value
+        .trim();
 
     const phone =
-        document.getElementById("customerPhone").value.trim();
+        document.getElementById("customerPhone")
+        .value
+        .trim();
 
     const message =
         document.getElementById("message");
@@ -938,9 +969,13 @@ function submitEnquiry() {
 
                 closeCart();
 
-                document.getElementById("customerName").value = "";
+                document.getElementById(
+                    "customerName"
+                ).value = "";
 
-                document.getElementById("customerPhone").value = "";
+                document.getElementById(
+                    "customerPhone"
+                ).value = "";
 
                 message.style.display = "none";
 
@@ -949,7 +984,8 @@ function submitEnquiry() {
         } else {
 
             showMessage(
-                data.error || "Could not send enquiry.",
+                data.error ||
+                "Could not send enquiry.",
                 false
             );
 
@@ -991,19 +1027,31 @@ function showMessage(text, success) {
 function searchProducts() {
 
     const query =
-        document.getElementById("search").value
+        document.getElementById("search")
+        .value
         .toLowerCase()
         .trim();
 
-    const filtered = products.filter(product =>
+    const filtered =
+        products.filter(product =>
 
-        product.name.toLowerCase().includes(query) ||
+            product.name
+                .toLowerCase()
+                .includes(query)
 
-        product.category.toLowerCase().includes(query) ||
+            ||
 
-        product.description.toLowerCase().includes(query)
+            product.category
+                .toLowerCase()
+                .includes(query)
 
-    );
+            ||
+
+            product.description
+                .toLowerCase()
+                .includes(query)
+
+        );
 
     displayProducts(filtered);
 
@@ -1047,9 +1095,13 @@ def enquiry():
             }), 400
 
 
-        name = str(data.get("name", "")).strip()
+        name = str(
+            data.get("name", "")
+        ).strip()
 
-        phone = str(data.get("phone", "")).strip()
+        phone = str(
+            data.get("phone", "")
+        ).strip()
 
         cart = data.get("cart", [])
 
@@ -1070,7 +1122,7 @@ def enquiry():
             }), 400
 
 
-        if not isinstance(cart, list) or len(cart) == 0:
+        if not isinstance(cart, list) or not cart:
 
             return jsonify({
                 "success": False,
@@ -1079,75 +1131,26 @@ def enquiry():
 
 
         # -------------------------------------------------
-        # BUILD EMAIL
+        # BUILD EMAIL CONTENT
         # -------------------------------------------------
 
-        email_lines = []
-
-        email_lines.append(
-            "=================================================="
-        )
-
-        email_lines.append(
-            "NEW CUSTOMER ENQUIRY"
-        )
-
-        email_lines.append(
-            "=================================================="
-        )
-
-        email_lines.append("")
-
-        email_lines.append(
-            "VASUDEV TECHNOLOGIES"
-        )
-
-        email_lines.append("")
-
-        email_lines.append(
-            "CUSTOMER DETAILS"
-        )
-
-        email_lines.append(
-            "----------------"
-        )
-
-        email_lines.append(
-            f"Customer Name: {name}"
-        )
-
-        email_lines.append(
-            f"Phone Number: {phone}"
-        )
-
-        email_lines.append("")
-
-        email_lines.append(
-            "PRODUCTS ENQUIRED"
-        )
-
-        email_lines.append(
-            "-----------------"
-        )
+        rows = []
 
         total = 0
 
-        valid_product_found = False
-
-
-        for cart_item in cart:
+        for item in cart:
 
             try:
 
                 product_id = int(
-                    cart_item.get("id")
+                    item.get("id")
                 )
 
                 quantity = int(
-                    cart_item.get("quantity", 1)
+                    item.get("quantity", 1)
                 )
 
-            except:
+            except Exception:
 
                 continue
 
@@ -1169,39 +1172,36 @@ def enquiry():
                 continue
 
 
-            valid_product_found = True
-
-            subtotal = (
+            subtotal =
                 product["price"] * quantity
-            )
 
             total += subtotal
 
 
-            email_lines.append("")
+            rows.append(
+                f"""
+                <tr>
+                    <td style="padding:10px;border:1px solid #ddd;">
+                        {product["name"]}
+                    </td>
 
-            email_lines.append(
-                product["name"]
+                    <td style="padding:10px;border:1px solid #ddd;">
+                        {quantity}
+                    </td>
+
+                    <td style="padding:10px;border:1px solid #ddd;">
+                        ₹{product["price"]:,}
+                    </td>
+
+                    <td style="padding:10px;border:1px solid #ddd;">
+                        ₹{subtotal:,}
+                    </td>
+                </tr>
+                """
             )
 
-            email_lines.append(
-                f"Category: {product['category']}"
-            )
 
-            email_lines.append(
-                f"Quantity: {quantity}"
-            )
-
-            email_lines.append(
-                f"Price: ₹{product['price']:,}"
-            )
-
-            email_lines.append(
-                f"Subtotal: ₹{subtotal:,}"
-            )
-
-
-        if not valid_product_found:
+        if not rows:
 
             return jsonify({
                 "success": False,
@@ -1209,48 +1209,102 @@ def enquiry():
             }), 400
 
 
-        email_lines.append("")
-
-        email_lines.append(
-            "--------------------------------------------------"
-        )
-
-        email_lines.append(
-            f"TOTAL: ₹{total:,}"
-        )
-
-        email_lines.append(
-            "--------------------------------------------------"
-        )
-
-        email_lines.append("")
-
-        email_lines.append(
-            "This enquiry was submitted through"
-        )
-
-        email_lines.append(
-            "the VASUDEV TECHNOLOGIES website."
-        )
-
-        email_lines.append("")
+        products_html = "".join(rows)
 
 
-        email_body = "\n".join(email_lines)
+        email_html = f"""
+
+        <div style="font-family:Arial,sans-serif;">
+
+            <h1 style="color:#1e3a8a;">
+                VASUDEV TECHNOLOGIES
+            </h1>
+
+            <h2>
+                New Customer Enquiry
+            </h2>
+
+            <hr>
+
+            <h3>Customer Details</h3>
+
+            <p>
+                <strong>Name:</strong>
+                {name}
+            </p>
+
+            <p>
+                <strong>Phone:</strong>
+                {phone}
+            </p>
+
+            <h3>Products Enquired</h3>
+
+            <table
+                style="
+                    border-collapse:collapse;
+                    width:100%;
+                    max-width:800px;
+                "
+            >
+
+                <thead>
+
+                    <tr>
+
+                        <th style="padding:10px;border:1px solid #ddd;">
+                            Product
+                        </th>
+
+                        <th style="padding:10px;border:1px solid #ddd;">
+                            Quantity
+                        </th>
+
+                        <th style="padding:10px;border:1px solid #ddd;">
+                            Price
+                        </th>
+
+                        <th style="padding:10px;border:1px solid #ddd;">
+                            Subtotal
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {products_html}
+
+                </tbody>
+
+            </table>
+
+            <h2>
+                Total: ₹{total:,}
+            </h2>
+
+            <hr>
+
+            <p>
+                This enquiry was submitted through the
+                VASUDEV TECHNOLOGIES website.
+            </p>
+
+        </div>
+
+        """
 
 
         # -------------------------------------------------
-        # CHECK ENVIRONMENT VARIABLES
+        # CHECK RESEND KEY
         # -------------------------------------------------
 
-        if not SMTP_EMAIL or not SMTP_PASSWORD:
+        if not RESEND_API_KEY:
 
-            print("")
-            print("==================================================")
-            print("GMAIL SETTINGS ARE NOT CONFIGURED")
-            print("==================================================")
-            print(email_body)
-            print("==================================================")
+            print(
+                "RESEND_API_KEY is not configured."
+            )
 
             return jsonify({
                 "success": False,
@@ -1259,60 +1313,27 @@ def enquiry():
 
 
         # -------------------------------------------------
-        # CREATE EMAIL
+        # SEND THROUGH RESEND
         # -------------------------------------------------
 
-        msg = EmailMessage()
+        print("Sending enquiry through Resend...")
 
-        msg["Subject"] = (
-            f"New VASUDEV Enquiry - {name}"
+
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [BUSINESS_EMAIL],
+            "subject": f"New VASUDEV Enquiry - {name}",
+            "html": email_html
+        }
+
+
+        result = resend.Emails.send(params)
+
+
+        print(
+            "Resend result:",
+            result
         )
-
-        msg["From"] = SMTP_EMAIL
-
-        msg["To"] = BUSINESS_EMAIL
-
-        msg.set_content(email_body)
-
-
-        # -------------------------------------------------
-        # CONNECT TO GMAIL SMTP
-        # -------------------------------------------------
-
-        print("")
-        print("Connecting to Gmail SMTP...")
-
-        context = ssl.create_default_context()
-
-
-        with smtplib.SMTP(
-            SMTP_SERVER,
-            SMTP_PORT,
-            timeout=30
-        ) as server:
-
-            server.ehlo()
-
-            server.starttls(
-                context=context
-            )
-
-            server.ehlo()
-
-            server.login(
-                SMTP_EMAIL,
-                SMTP_PASSWORD
-            )
-
-            server.send_message(msg)
-
-
-        print("")
-        print("==================================================")
-        print("EMAIL SENT SUCCESSFULLY")
-        print("==================================================")
-        print(email_body)
-        print("==================================================")
 
 
         return jsonify({
@@ -1321,64 +1342,22 @@ def enquiry():
         })
 
 
-    except smtplib.SMTPAuthenticationError:
-
-        print("")
-        print("GMAIL AUTHENTICATION ERROR")
-        print("Check SMTP_EMAIL and SMTP_PASSWORD.")
-        print("")
-
-
-        return jsonify({
-            "success": False,
-            "error": "Gmail authentication failed. Check the Gmail App Password in Render."
-        }), 500
-
-
-    except smtplib.SMTPConnectError:
-
-        print("")
-        print("GMAIL CONNECTION ERROR")
-        print("Could not connect to Gmail SMTP.")
-        print("")
-
-
-        return jsonify({
-            "success": False,
-            "error": "Could not connect to Gmail SMTP server."
-        }), 500
-
-
-    except smtplib.SMTPException as e:
-
-        print("")
-        print("SMTP ERROR:")
-        print(str(e))
-        print("")
-
-
-        return jsonify({
-            "success": False,
-            "error": "Gmail SMTP error occurred."
-        }), 500
-
-
     except Exception as e:
 
         print("")
-        print("GENERAL EMAIL ERROR:")
+        print("RESEND EMAIL ERROR:")
         print(str(e))
         print("")
 
 
         return jsonify({
             "success": False,
-            "error": "Could not send enquiry email."
+            "error": "Could not send enquiry email. Check Render logs."
         }), 500
 
 
 # =========================================================
-# START
+# START SERVER
 # =========================================================
 
 if __name__ == "__main__":
@@ -1386,7 +1365,10 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=int(
-            os.environ.get("PORT", 5000)
+            os.environ.get(
+                "PORT",
+                5000
+            )
         ),
         debug=False
     )
