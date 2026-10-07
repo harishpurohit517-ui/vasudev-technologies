@@ -1170,10 +1170,7 @@ def enquiry():
 
             if product is None:
                 continue
-
-
-            subtotal =
-                product["price"] * quantity
+subtotal = product["price"] * quantity
 
             total += subtotal
 
