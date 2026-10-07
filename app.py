@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify, render_template_string, send_from_directory
 import os
 import json
@@ -9,7 +10,7 @@ app = Flask(__name__)
 # PRODUCTS
 # =========================================================
 
-products = [
+PRODUCTS = [
     {
         "id": 1,
         "name": "1.8 GB RAM",
@@ -68,16 +69,17 @@ products = [
     }
 ]
 
+
 # =========================================================
-# RESEND SETTINGS
+# EMAIL SETTINGS
 # =========================================================
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 
 BUSINESS_EMAIL = "harishpurohit517@gmail.com"
 
-# Resend provides onboarding@resend.dev for testing.
-# For production, replace this with an address on your
+# For Resend testing.
+# Later you can replace this with a sender from your
 # verified domain.
 SENDER_EMAIL = os.environ.get(
     "SENDER_EMAIL",
@@ -89,38 +91,42 @@ if RESEND_API_KEY:
 
 
 # =========================================================
-# PRODUCT IMAGES
+# PRODUCT IMAGE ROUTE
 # =========================================================
 
 @app.route("/product-image/<path:filename>")
 def product_image(filename):
+
+    folder = os.path.dirname(
+        os.path.abspath(__file__)
+    )
+
     return send_from_directory(
-        os.path.dirname(os.path.abspath(__file__)),
+        folder,
         filename
     )
 
 
 # =========================================================
-# HOME
+# HOME PAGE
 # =========================================================
 
 @app.route("/")
 def home():
 
-    product_json = json.dumps(products)
+    products_json = json.dumps(PRODUCTS)
 
-    html = r"""
+    html = """
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
 
 <title>VASUDEV TECHNOLOGIES</title>
 
@@ -133,9 +139,12 @@ def home():
 body {
     margin: 0;
     font-family: Arial, Helvetica, sans-serif;
-    background: #f5f7fb;
+    background: #f4f6f8;
     color: #111827;
 }
+
+
+/* HEADER */
 
 header {
     background: #0b1220;
@@ -150,31 +159,44 @@ header {
 }
 
 .logo {
-    font-size: 25px;
+    font-size: 24px;
     font-weight: bold;
     letter-spacing: 1px;
 }
 
 .cart-button {
+    border: none;
     background: #2563eb;
     color: white;
-    border: none;
     padding: 11px 18px;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 15px;
     font-weight: bold;
+    font-size: 15px;
 }
 
+.cart-button:hover {
+    background: #1d4ed8;
+}
+
+
+/* HERO */
+
 .hero {
-    background: linear-gradient(135deg, #0f172a, #1e3a8a);
+    background:
+        linear-gradient(
+            135deg,
+            #0f172a,
+            #1e40af
+        );
+
     color: white;
     text-align: center;
-    padding: 70px 20px;
+    padding: 75px 20px;
 }
 
 .hero h1 {
-    font-size: 45px;
+    font-size: 44px;
     margin: 0 0 12px;
 }
 
@@ -183,9 +205,12 @@ header {
     color: #dbeafe;
 }
 
+
+/* SEARCH */
+
 .search-area {
     text-align: center;
-    padding: 25px 20px;
+    padding: 28px 20px 10px;
 }
 
 .search-box {
@@ -198,13 +223,22 @@ header {
     outline: none;
 }
 
+
+/* PRODUCTS */
+
 .products {
     max-width: 1250px;
     margin: auto;
-    padding: 20px;
+    padding: 25px 20px 50px;
+
     display: grid;
+
     grid-template-columns:
-        repeat(auto-fit, minmax(240px, 1fr));
+        repeat(
+            auto-fit,
+            minmax(240px, 1fr)
+        );
+
     gap: 25px;
 }
 
@@ -212,7 +246,11 @@ header {
     background: white;
     border-radius: 18px;
     overflow: hidden;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+
+    box-shadow:
+        0 8px 25px
+        rgba(0, 0, 0, 0.08);
+
     transition: 0.25s;
 }
 
@@ -224,8 +262,8 @@ header {
     width: 100%;
     height: 210px;
     object-fit: contain;
-    background: white;
     padding: 15px;
+    background: white;
 }
 
 .card-content {
@@ -246,7 +284,7 @@ header {
 .description {
     color: #6b7280;
     font-size: 14px;
-    min-height: 38px;
+    min-height: 40px;
 }
 
 .price {
@@ -270,25 +308,40 @@ header {
     background: #2563eb;
 }
 
-/* CART */
+
+/* OVERLAY */
 
 .overlay {
     display: none;
+
     position: fixed;
+
     inset: 0;
-    background: rgba(0,0,0,0.55);
+
+    background:
+        rgba(0, 0, 0, 0.55);
+
     z-index: 2000;
 }
 
+
+/* CART */
+
 .cart-panel {
     background: white;
+
     width: 95%;
     max-width: 520px;
+
     height: 100%;
+
     position: absolute;
+
     right: 0;
     top: 0;
+
     padding: 25px;
+
     overflow-y: auto;
 }
 
@@ -298,12 +351,12 @@ header {
     align-items: center;
 }
 
-.close {
+.close-button {
     border: none;
     background: #ef4444;
     color: white;
-    border-radius: 8px;
     padding: 8px 12px;
+    border-radius: 8px;
     cursor: pointer;
 }
 
@@ -314,6 +367,7 @@ header {
 
 .cart-item-name {
     font-weight: bold;
+    font-size: 17px;
 }
 
 .quantity {
@@ -325,8 +379,8 @@ header {
 }
 
 .quantity button {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border: none;
     border-radius: 6px;
     background: #e5e7eb;
@@ -335,13 +389,13 @@ header {
 
 .quantity .remove {
     width: auto;
-    padding: 0 10px;
+    padding: 0 12px;
     color: #dc2626;
     background: #fee2e2;
 }
 
 .total {
-    font-size: 22px;
+    font-size: 23px;
     font-weight: bold;
     margin: 25px 0;
 }
@@ -358,24 +412,39 @@ header {
     cursor: pointer;
 }
 
-/* FORM */
+.enquire-button:hover {
+    background: #15803d;
+}
+
+
+/* ENQUIRY MODAL */
 
 .modal {
     display: none;
+
     position: fixed;
+
     inset: 0;
-    background: rgba(0,0,0,0.65);
+
+    background:
+        rgba(0, 0, 0, 0.65);
+
     z-index: 3000;
+
     justify-content: center;
     align-items: center;
+
     padding: 20px;
 }
 
 .form-box {
     background: white;
+
     width: 100%;
     max-width: 450px;
+
     border-radius: 18px;
+
     padding: 30px;
 }
 
@@ -385,38 +454,61 @@ header {
 
 .form-box input {
     width: 100%;
+
     padding: 14px;
-    margin: 8px 0 15px;
-    border: 1px solid #d1d5db;
+
+    margin:
+        8px 0 15px;
+
+    border:
+        1px solid #d1d5db;
+
     border-radius: 9px;
+
     font-size: 16px;
 }
 
 .submit-button {
     width: 100%;
+
     padding: 14px;
+
     background: #2563eb;
+
     color: white;
+
     border: none;
+
     border-radius: 9px;
+
     font-weight: bold;
+
     cursor: pointer;
 }
 
 .cancel-button {
     width: 100%;
+
     padding: 12px;
+
     margin-top: 8px;
+
     background: #e5e7eb;
+
     border: none;
+
     border-radius: 9px;
+
     cursor: pointer;
 }
 
 .message {
     margin-top: 15px;
+
     padding: 12px;
+
     border-radius: 8px;
+
     display: none;
 }
 
@@ -430,22 +522,36 @@ header {
     color: #991b1b;
 }
 
+
+/* FOOTER */
+
 footer {
-    margin-top: 60px;
-    padding: 35px;
     background: #0b1220;
+
     color: white;
+
     text-align: center;
+
+    padding: 35px;
+
+    margin-top: 20px;
 }
 
-@media(max-width:600px) {
+
+/* MOBILE */
+
+@media (max-width: 600px) {
 
     .hero h1 {
         font-size: 32px;
     }
 
     .logo {
-        font-size: 19px;
+        font-size: 18px;
+    }
+
+    .cart-panel {
+        width: 100%;
     }
 
 }
@@ -454,7 +560,9 @@ footer {
 
 </head>
 
+
 <body>
+
 
 <header>
 
@@ -462,7 +570,10 @@ footer {
 VASUDEV TECHNOLOGIES
 </div>
 
-<button class="cart-button" onclick="openCart()">
+<button
+    class="cart-button"
+    onclick="openCart()"
+>
 🛒 Cart (<span id="cartCount">0</span>)
 </button>
 
@@ -471,7 +582,9 @@ VASUDEV TECHNOLOGIES
 
 <section class="hero">
 
-<h1>VASUDEV TECHNOLOGIES</h1>
+<h1>
+VASUDEV TECHNOLOGIES
+</h1>
 
 <p>
 Laptop Parts • Computer Accessories • Quality Products
@@ -484,7 +597,8 @@ Laptop Parts • Computer Accessories • Quality Products
 
 <input
     class="search-box"
-    id="search"
+    id="searchBox"
+    type="text"
     placeholder="Search products..."
     oninput="searchProducts()"
 >
@@ -492,12 +606,17 @@ Laptop Parts • Computer Accessories • Quality Products
 </div>
 
 
-<div class="products" id="products"></div>
+<div
+    class="products"
+    id="productsContainer"
+></div>
 
 
 <footer>
 
-<h2>VASUDEV TECHNOLOGIES</h2>
+<h2>
+VASUDEV TECHNOLOGIES
+</h2>
 
 <p>
 Quality laptop parts and computer accessories.
@@ -512,25 +631,39 @@ Quality laptop parts and computer accessories.
 
 <!-- CART -->
 
-<div class="overlay" id="cartOverlay">
+<div
+    class="overlay"
+    id="cartOverlay"
+>
 
 <div class="cart-panel">
 
 <div class="cart-header">
 
-<h2>🛒 Your Cart</h2>
+<h2>
+🛒 Your Cart
+</h2>
 
-<button class="close" onclick="closeCart()">
+<button
+    class="close-button"
+    onclick="closeCart()"
+>
 Close
 </button>
 
 </div>
 
+
 <div id="cartItems"></div>
 
+
 <div class="total">
-Total: ₹<span id="cartTotal">0</span>
+
+Total:
+₹<span id="cartTotal">0</span>
+
 </div>
+
 
 <button
     class="enquire-button"
@@ -539,24 +672,33 @@ Total: ₹<span id="cartTotal">0</span>
 Enquire About These Products
 </button>
 
-</div>
 
 </div>
 
+</div>
 
-<!-- ENQUIRY -->
 
-<div class="modal" id="enquiryModal">
+<!-- ENQUIRY FORM -->
+
+<div
+    class="modal"
+    id="enquiryModal"
+>
 
 <div class="form-box">
 
-<h2>Customer Enquiry</h2>
+<h2>
+Customer Enquiry
+</h2>
 
 <p>
 Enter your details and we will contact you.
 </p>
 
-<label>Name</label>
+
+<label>
+Name
+</label>
 
 <input
     id="customerName"
@@ -564,13 +706,17 @@ Enter your details and we will contact you.
     placeholder="Your name"
 >
 
-<label>Phone Number</label>
+
+<label>
+Phone Number
+</label>
 
 <input
     id="customerPhone"
     type="tel"
     placeholder="Your phone number"
 >
+
 
 <button
     class="submit-button"
@@ -579,6 +725,7 @@ Enter your details and we will contact you.
 Send Enquiry
 </button>
 
+
 <button
     class="cancel-button"
     onclick="closeEnquiry()"
@@ -586,7 +733,12 @@ Send Enquiry
 Cancel
 </button>
 
-<div id="message" class="message"></div>
+
+<div
+    id="message"
+    class="message"
+></div>
+
 
 </div>
 
@@ -595,27 +747,42 @@ Cancel
 
 <script>
 
-const products = PRODUCT_DATA;
+const products = PRODUCTS_DATA;
 
 let cart = [];
 
 
-function displayProducts(list = products) {
+/* ======================================================
+   DISPLAY PRODUCTS
+====================================================== */
+
+function displayProducts(list) {
 
     const container =
-        document.getElementById("products");
+        document.getElementById(
+            "productsContainer"
+        );
 
     container.innerHTML = "";
 
+
     if (list.length === 0) {
 
-        container.innerHTML =
-            "<p style='text-align:center;grid-column:1/-1;'>No products found.</p>";
+        container.innerHTML = `
+            <p style="
+                grid-column:1/-1;
+                text-align:center;
+                font-size:18px;
+            ">
+                No products found.
+            </p>
+        `;
 
         return;
     }
 
-    list.forEach(product => {
+
+    list.forEach(function(product) {
 
         container.innerHTML += `
 
@@ -625,6 +792,7 @@ function displayProducts(list = products) {
                 class="product-image"
                 src="/product-image/${product.image}"
                 alt="${product.name}"
+                onerror="this.style.display='none'"
             >
 
             <div class="card-content">
@@ -663,108 +831,198 @@ function displayProducts(list = products) {
 }
 
 
+/* ======================================================
+   ADD TO CART
+====================================================== */
+
 function addToCart(id) {
 
     const existing =
-        cart.find(item => item.id === id);
+        cart.find(function(item) {
+
+            return item.id === id;
+
+        });
+
 
     if (existing) {
 
         existing.quantity++;
 
-    } else {
+    }
+
+    else {
 
         const product =
-            products.find(p => p.id === id);
+            products.find(function(item) {
+
+                return item.id === id;
+
+            });
+
+
+        if (!product) {
+            return;
+        }
+
 
         cart.push({
-            ...product,
+
+            id: product.id,
+
+            name: product.name,
+
+            price: product.price,
+
+            category: product.category,
+
             quantity: 1
+
         });
 
     }
 
+
     updateCart();
 
 }
 
+
+/* ======================================================
+   INCREASE
+====================================================== */
 
 function increaseQuantity(id) {
 
     const item =
-        cart.find(p => p.id === id);
+        cart.find(function(product) {
+
+            return product.id === id;
+
+        });
+
 
     if (item) {
+
         item.quantity++;
+
     }
+
 
     updateCart();
 
 }
 
+
+/* ======================================================
+   DECREASE
+====================================================== */
 
 function decreaseQuantity(id) {
 
     const item =
-        cart.find(p => p.id === id);
+        cart.find(function(product) {
 
-    if (!item) return;
+            return product.id === id;
+
+        });
+
+
+    if (!item) {
+        return;
+    }
+
 
     item.quantity--;
+
 
     if (item.quantity <= 0) {
 
         cart =
-            cart.filter(p => p.id !== id);
+            cart.filter(function(product) {
+
+                return product.id !== id;
+
+            });
 
     }
+
 
     updateCart();
 
 }
 
+
+/* ======================================================
+   REMOVE
+====================================================== */
 
 function removeFromCart(id) {
 
     cart =
-        cart.filter(p => p.id !== id);
+        cart.filter(function(product) {
+
+            return product.id !== id;
+
+        });
+
 
     updateCart();
 
 }
 
+
+/* ======================================================
+   UPDATE CART
+====================================================== */
 
 function updateCart() {
 
     const count =
         cart.reduce(
-            (sum, item) => sum + item.quantity,
+            function(total, item) {
+
+                return total + item.quantity;
+
+            },
             0
         );
 
-    document.getElementById("cartCount").innerText =
-        count;
+
+    document.getElementById(
+        "cartCount"
+    ).innerText = count;
+
 
     const container =
-        document.getElementById("cartItems");
+        document.getElementById(
+            "cartItems"
+        );
+
 
     container.innerHTML = "";
 
+
     let total = 0;
+
 
     if (cart.length === 0) {
 
-        container.innerHTML =
-            "<p>Your cart is empty.</p>";
+        container.innerHTML = `
+            <p>Your cart is empty.</p>
+        `;
 
     }
 
-    cart.forEach(item => {
+
+    cart.forEach(function(item) {
 
         const subtotal =
             item.price * item.quantity;
 
+
         total += subtotal;
+
 
         container.innerHTML += `
 
@@ -817,27 +1075,44 @@ function updateCart() {
 
     });
 
-    document.getElementById("cartTotal").innerText =
+
+    document.getElementById(
+        "cartTotal"
+    ).innerText =
         total.toLocaleString("en-IN");
 
 }
 
 
+/* ======================================================
+   OPEN CART
+====================================================== */
+
 function openCart() {
 
-    document.getElementById("cartOverlay").style.display =
-        "block";
+    document.getElementById(
+        "cartOverlay"
+    ).style.display = "block";
 
 }
 
+
+/* ======================================================
+   CLOSE CART
+====================================================== */
 
 function closeCart() {
 
-    document.getElementById("cartOverlay").style.display =
-        "none";
+    document.getElementById(
+        "cartOverlay"
+    ).style.display = "none";
 
 }
 
+
+/* ======================================================
+   OPEN ENQUIRY
+====================================================== */
 
 function openEnquiry() {
 
@@ -850,34 +1125,78 @@ function openEnquiry() {
         return;
     }
 
-    document.getElementById("enquiryModal").style.display =
-        "flex";
+
+    document.getElementById(
+        "enquiryModal"
+    ).style.display = "flex";
 
 }
 
+
+/* ======================================================
+   CLOSE ENQUIRY
+====================================================== */
 
 function closeEnquiry() {
 
-    document.getElementById("enquiryModal").style.display =
-        "none";
+    document.getElementById(
+        "enquiryModal"
+    ).style.display = "none";
 
 }
 
+
+/* ======================================================
+   MESSAGE
+====================================================== */
+
+function showMessage(text, success) {
+
+    const message =
+        document.getElementById(
+            "message"
+        );
+
+
+    message.style.display = "block";
+
+
+    if (success) {
+
+        message.className =
+            "message success";
+
+    }
+
+    else {
+
+        message.className =
+            "message error";
+
+    }
+
+
+    message.innerText = text;
+
+}
+
+
+/* ======================================================
+   SEND ENQUIRY
+====================================================== */
 
 function submitEnquiry() {
 
     const name =
-        document.getElementById("customerName")
-        .value
-        .trim();
+        document.getElementById(
+            "customerName"
+        ).value.trim();
+
 
     const phone =
-        document.getElementById("customerPhone")
-        .value
-        .trim();
-
-    const message =
-        document.getElementById("message");
+        document.getElementById(
+            "customerPhone"
+        ).value.trim();
 
 
     if (!name) {
@@ -913,75 +1232,100 @@ function submitEnquiry() {
     }
 
 
-    message.style.display = "block";
-
-    message.className = "message";
-
-    message.innerText =
-        "Sending enquiry...";
+    showMessage(
+        "Sending enquiry...",
+        true
+    );
 
 
-    fetch("/enquiry", {
+    fetch(
+        "/enquiry",
+        {
 
-        method: "POST",
+            method: "POST",
 
-        headers: {
-            "Content-Type": "application/json"
-        },
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
 
-        body: JSON.stringify({
+            body: JSON.stringify({
 
-            name: name,
+                name: name,
 
-            phone: phone,
+                phone: phone,
 
-            cart: cart.map(item => ({
+                cart: cart.map(
+                    function(item) {
 
-                id: item.id,
+                        return {
 
-                quantity: item.quantity
+                            id: item.id,
 
-            }))
+                            quantity:
+                                item.quantity
 
-        })
+                        };
+
+                    }
+                )
+
+            })
+
+        }
+    )
+
+    .then(function(response) {
+
+        return response.json();
 
     })
 
-    .then(response => response.json())
-
-    .then(data => {
+    .then(function(data) {
 
         if (data.success) {
 
-            message.className =
-                "message success";
+            showMessage(
+                "✅ Enquiry sent successfully!",
+                true
+            );
 
-            message.innerText =
-                "✅ Enquiry sent successfully!";
 
             cart = [];
 
+
             updateCart();
 
-            setTimeout(() => {
 
-                closeEnquiry();
+            setTimeout(
+                function() {
 
-                closeCart();
+                    closeEnquiry();
 
-                document.getElementById(
-                    "customerName"
-                ).value = "";
+                    closeCart();
 
-                document.getElementById(
-                    "customerPhone"
-                ).value = "";
 
-                message.style.display = "none";
+                    document.getElementById(
+                        "customerName"
+                    ).value = "";
 
-            }, 1800);
 
-        } else {
+                    document.getElementById(
+                        "customerPhone"
+                    ).value = "";
+
+
+                    document.getElementById(
+                        "message"
+                    ).style.display = "none";
+
+                },
+                1800
+            );
+
+        }
+
+        else {
 
             showMessage(
                 data.error ||
@@ -993,9 +1337,10 @@ function submitEnquiry() {
 
     })
 
-    .catch(error => {
+    .catch(function(error) {
 
         console.error(error);
+
 
         showMessage(
             "Could not connect to the server.",
@@ -1007,62 +1352,63 @@ function submitEnquiry() {
 }
 
 
-function showMessage(text, success) {
-
-    const message =
-        document.getElementById("message");
-
-    message.style.display = "block";
-
-    message.className =
-        success
-        ? "message success"
-        : "message error";
-
-    message.innerText = text;
-
-}
-
+/* ======================================================
+   SEARCH
+====================================================== */
 
 function searchProducts() {
 
     const query =
-        document.getElementById("search")
-        .value
+        document.getElementById(
+            "searchBox"
+        ).value
         .toLowerCase()
         .trim();
 
+
     const filtered =
-        products.filter(product =>
+        products.filter(
+            function(product) {
 
-            product.name
-                .toLowerCase()
-                .includes(query)
+                return (
 
-            ||
+                    product.name
+                        .toLowerCase()
+                        .includes(query)
 
-            product.category
-                .toLowerCase()
-                .includes(query)
+                    ||
 
-            ||
+                    product.category
+                        .toLowerCase()
+                        .includes(query)
 
-            product.description
-                .toLowerCase()
-                .includes(query)
+                    ||
 
+                    product.description
+                        .toLowerCase()
+                        .includes(query)
+
+                );
+
+            }
         );
+
 
     displayProducts(filtered);
 
 }
 
 
-displayProducts();
+/* ======================================================
+   START
+====================================================== */
+
+displayProducts(products);
 
 updateCart();
 
 </script>
+
 
 </body>
 
@@ -1070,15 +1416,15 @@ updateCart();
 """
 
     html = html.replace(
-        "PRODUCT_DATA",
-        product_json
+        "PRODUCTS_DATA",
+        products_json
     )
 
     return render_template_string(html)
 
 
 # =========================================================
-# ENQUIRY
+# ENQUIRY API
 # =========================================================
 
 @app.route("/enquiry", methods=["POST"])
@@ -1086,9 +1432,11 @@ def enquiry():
 
     try:
 
-        data = request.get_json()
+        data = request.get_json(silent=True)
+
 
         if not data:
+
             return jsonify({
                 "success": False,
                 "error": "Invalid request."
@@ -1099,11 +1447,16 @@ def enquiry():
             data.get("name", "")
         ).strip()
 
+
         phone = str(
             data.get("phone", "")
         ).strip()
 
-        cart = data.get("cart", [])
+
+        cart = data.get(
+            "cart",
+            []
+        )
 
 
         if not name:
@@ -1131,12 +1484,13 @@ def enquiry():
 
 
         # -------------------------------------------------
-        # BUILD EMAIL CONTENT
+        # BUILD PRODUCT LIST
         # -------------------------------------------------
 
         rows = []
 
         total = 0
+
 
         for item in cart:
 
@@ -1150,27 +1504,36 @@ def enquiry():
                     item.get("quantity", 1)
                 )
 
-            except Exception:
+            except (TypeError, ValueError):
 
                 continue
 
 
             if quantity <= 0:
+
                 continue
 
 
             product = next(
                 (
-                    p for p in products
-                    if p["id"] == product_id
+                    product
+                    for product in PRODUCTS
+                    if product["id"] == product_id
                 ),
                 None
             )
 
 
             if product is None:
+
                 continue
-subtotal = product["price"] * quantity
+
+
+            subtotal = (
+                product["price"] *
+                quantity
+            )
+
 
             total += subtotal
 
@@ -1178,21 +1541,35 @@ subtotal = product["price"] * quantity
             rows.append(
                 f"""
                 <tr>
-                    <td style="padding:10px;border:1px solid #ddd;">
+
+                    <td style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
                         {product["name"]}
                     </td>
 
-                    <td style="padding:10px;border:1px solid #ddd;">
+                    <td style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
                         {quantity}
                     </td>
 
-                    <td style="padding:10px;border:1px solid #ddd;">
+                    <td style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
                         ₹{product["price"]:,}
                     </td>
 
-                    <td style="padding:10px;border:1px solid #ddd;">
+                    <td style="
+                        padding:10px;
+                        border:1px solid #ddd;
+                    ">
                         ₹{subtotal:,}
                     </td>
+
                 </tr>
                 """
             )
@@ -1206,14 +1583,23 @@ subtotal = product["price"] * quantity
             }), 400
 
 
-        products_html = "".join(rows)
+        product_rows = "".join(rows)
 
+
+        # -------------------------------------------------
+        # EMAIL
+        # -------------------------------------------------
 
         email_html = f"""
 
-        <div style="font-family:Arial,sans-serif;">
+        <div style="
+            font-family:Arial,sans-serif;
+            max-width:800px;
+        ">
 
-            <h1 style="color:#1e3a8a;">
+            <h1 style="
+                color:#1e3a8a;
+            ">
                 VASUDEV TECHNOLOGIES
             </h1>
 
@@ -1223,7 +1609,9 @@ subtotal = product["price"] * quantity
 
             <hr>
 
-            <h3>Customer Details</h3>
+            <h3>
+                Customer Details
+            </h3>
 
             <p>
                 <strong>Name:</strong>
@@ -1235,33 +1623,44 @@ subtotal = product["price"] * quantity
                 {phone}
             </p>
 
-            <h3>Products Enquired</h3>
+            <h3>
+                Products Enquired
+            </h3>
 
-            <table
-                style="
-                    border-collapse:collapse;
-                    width:100%;
-                    max-width:800px;
-                "
-            >
+            <table style="
+                border-collapse:collapse;
+                width:100%;
+            ">
 
                 <thead>
 
                     <tr>
 
-                        <th style="padding:10px;border:1px solid #ddd;">
+                        <th style="
+                            padding:10px;
+                            border:1px solid #ddd;
+                        ">
                             Product
                         </th>
 
-                        <th style="padding:10px;border:1px solid #ddd;">
+                        <th style="
+                            padding:10px;
+                            border:1px solid #ddd;
+                        ">
                             Quantity
                         </th>
 
-                        <th style="padding:10px;border:1px solid #ddd;">
+                        <th style="
+                            padding:10px;
+                            border:1px solid #ddd;
+                        ">
                             Price
                         </th>
 
-                        <th style="padding:10px;border:1px solid #ddd;">
+                        <th style="
+                            padding:10px;
+                            border:1px solid #ddd;
+                        ">
                             Subtotal
                         </th>
 
@@ -1271,7 +1670,7 @@ subtotal = product["price"] * quantity
 
                 <tbody>
 
-                    {products_html}
+                    {product_rows}
 
                 </tbody>
 
@@ -1284,8 +1683,8 @@ subtotal = product["price"] * quantity
             <hr>
 
             <p>
-                This enquiry was submitted through the
-                VASUDEV TECHNOLOGIES website.
+                This enquiry was submitted through
+                the VASUDEV TECHNOLOGIES website.
             </p>
 
         </div>
@@ -1294,78 +1693,92 @@ subtotal = product["price"] * quantity
 
 
         # -------------------------------------------------
-        # CHECK RESEND KEY
+        # RESEND CHECK
         # -------------------------------------------------
 
         if not RESEND_API_KEY:
 
             print(
-                "RESEND_API_KEY is not configured."
+                "ERROR: RESEND_API_KEY is missing."
             )
 
             return jsonify({
                 "success": False,
-                "error": "Email system is not configured yet."
+                "error": "Email system is not configured."
             }), 500
 
 
         # -------------------------------------------------
-        # SEND THROUGH RESEND
+        # SEND EMAIL
         # -------------------------------------------------
 
-        print("Sending enquiry through Resend...")
+        print(
+            "Sending enquiry through Resend..."
+        )
 
 
         params = {
             "from": SENDER_EMAIL,
             "to": [BUSINESS_EMAIL],
-            "subject": f"New VASUDEV Enquiry - {name}",
+            "subject":
+                f"New VASUDEV Enquiry - {name}",
             "html": email_html
         }
 
 
-        result = resend.Emails.send(params)
+        result = resend.Emails.send(
+            params
+        )
 
 
         print(
-            "Resend result:",
+            "Resend email result:",
             result
         )
 
 
         return jsonify({
             "success": True,
-            "message": "Enquiry sent successfully."
+            "message":
+                "Enquiry sent successfully."
         })
 
 
-    except Exception as e:
+    except Exception as error:
 
-        print("")
-        print("RESEND EMAIL ERROR:")
-        print(str(e))
-        print("")
+        print(
+            "RESEND EMAIL ERROR:"
+        )
+
+        print(
+            str(error)
+        )
 
 
         return jsonify({
             "success": False,
-            "error": "Could not send enquiry email. Check Render logs."
+            "error":
+                "Email could not be sent. Please try again."
         }), 500
 
 
 # =========================================================
-# START SERVER
+# RUN
 # =========================================================
 
 if __name__ == "__main__":
 
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
+
+
     app.run(
         host="0.0.0.0",
-        port=int(
-            os.environ.get(
-                "PORT",
-                5000
-            )
-        ),
+        port=port,
         debug=False
     )
+
